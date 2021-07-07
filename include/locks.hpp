@@ -2,5 +2,6 @@
 
 #pragma once
 
+#include <locks/mcs.hpp>
 #include <locks/tas.hpp>
 #include <locks/ttas.hpp>

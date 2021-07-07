@@ -1,5 +1,7 @@
 // Copyright (c) 2021 Nikunj Gupta
 
+#pragma once
+
 #include <atomic>
 
 namespace locks {
