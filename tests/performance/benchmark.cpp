@@ -10,14 +10,15 @@
 
 #include <cstdint>
 #include <string>
+#include <tuple>
 
-std::string return_function_name(
+auto return_bounded_function(
     std::function<void(std::uint64_t, std::uint64_t)> func,
     std::string const& name)
 {
-    return name;
+    return std::make_pair(func, name);
 }
-#define GET_FUNCTION_NAME(f) return_function_name(f, #f)
+#define GET_FUNCTION_PAIR(f) return_bounded_function(f, #f)
 
 ////////////////////////////////////////////////////////////////////////////////
 void base_case(std::uint64_t grain_size)
@@ -302,6 +303,14 @@ public:
       : num_tasks_(num_tasks)
       , grain_size_(grain_size)
     {
+        std::cout << std::left << std::setw(30) << "Name: "
+                  << "Time (in s)" << '\n';
+    }
+
+    void invoke()
+    {
+        std::cout << std::left << std::setw(30) << "Name: "
+                  << "Time (in s)" << '\n';
     }
 
     template <typename Func, typename... Args>
@@ -310,13 +319,14 @@ public:
         hpx::chrono::high_resolution_timer t;
         for (std::size_t i = 0u; i != 3; ++i)
         {
-            func(num_tasks_, grain_size_);
+            func.first(num_tasks_, grain_size_);
         }
         double elapsed = t.elapsed();
 
-        std::string func_name = GET_FUNCTION_NAME(func);
-        char const* fmt = "{1}\t\t{2}";
-        hpx::util::format_to(std::cout, fmt, func_name, elapsed);
+        std::cout << std::left << std::setw(30) << func.second << elapsed
+                  << '\n';
+
+        this->invoke(args...);
     }
 
 private:
@@ -331,11 +341,19 @@ int hpx_main(hpx::program_options::variables_map& vm)
     std::uint64_t grain_size = vm["grain-size"].as<std::uint64_t>();
 
     benchmark_invoker invoker{num_tasks, grain_size};
-    invoker.invoke(no_locks, hpx_spinlock_small, hpx_spinlock_med,
-        hpx_spinlock_big, tas_critical_small, tas_critical_med,
-        tas_critical_big, ttas_critical_small, ttas_critical_med,
-        ttas_critical_big, mcs_critical_small, mcs_critical_med,
-        mcs_critical_big);
+    invoker.invoke(GET_FUNCTION_PAIR(no_locks),
+        GET_FUNCTION_PAIR(hpx_spinlock_small),
+        GET_FUNCTION_PAIR(hpx_spinlock_med),
+        GET_FUNCTION_PAIR(hpx_spinlock_big),
+        GET_FUNCTION_PAIR(tas_critical_small),
+        GET_FUNCTION_PAIR(tas_critical_med),
+        GET_FUNCTION_PAIR(tas_critical_big),
+        GET_FUNCTION_PAIR(ttas_critical_small),
+        GET_FUNCTION_PAIR(ttas_critical_med),
+        GET_FUNCTION_PAIR(ttas_critical_big),
+        GET_FUNCTION_PAIR(mcs_critical_small),
+        GET_FUNCTION_PAIR(mcs_critical_med),
+        GET_FUNCTION_PAIR(mcs_critical_big));
 
     return hpx::finalize();    // Handles HPX shutdown
 }
