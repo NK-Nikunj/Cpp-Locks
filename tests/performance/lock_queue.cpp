@@ -1,4 +1,5 @@
 #include <locks.hpp>
+#include <util/benchmark.hpp>
 
 #include <hpx/hpx_init.hpp>
 #include <hpx/modules/algorithms.hpp>
@@ -6,13 +7,6 @@
 
 #include <mutex>
 #include <queue>
-
-auto return_bounded_function(
-    std::function<void(std::uint64_t)> func, std::string const& name)
-{
-    return std::make_pair(func, name);
-}
-#define GET_FUNCTION_PAIR(f) return_bounded_function(f, #f)
 
 namespace ds {
 
@@ -41,9 +35,10 @@ namespace ds {
 }    // namespace ds
 
 ////////////////////////////////////////////////////////////////////////////////
-void hpx_spinlock(std::uint64_t num_push_pop)
+template <typename LockType>
+void concurrent_queue(std::uint64_t num_push_pop)
 {
-    ds::Queue<int, hpx::lcos::local::spinlock> queue;
+    ds::Queue<std::uint64_t, LockType> queue;
 
     hpx::for_loop(0ul, num_push_pop,
         [&queue](std::uint64_t i) { queue.push(std::rand()); });
@@ -51,89 +46,18 @@ void hpx_spinlock(std::uint64_t num_push_pop)
     hpx::for_loop(
         0ul, num_push_pop, [&queue](std::uint64_t i) { queue.pop(); });
 }
-
-////////////////////////////////////////////////////////////////////////////////
-void tas_lock(std::uint64_t num_push_pop)
-{
-    ds::Queue<int, locks::TAS_lock> queue;
-
-    hpx::for_loop(0ul, num_push_pop,
-        [&queue](std::uint64_t i) { queue.push(std::rand()); });
-
-    // hpx::for_loop(
-    //     0ul, num_push_pop, [&queue](std::uint64_t i) { queue.pop(); });
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void ttas_lock(std::uint64_t num_push_pop)
-{
-    ds::Queue<int, locks::TTAS_lock> queue;
-
-    hpx::for_loop(0ul, num_push_pop,
-        [&queue](std::uint64_t i) { queue.push(std::rand()); });
-
-    hpx::for_loop(
-        0ul, num_push_pop, [&queue](std::uint64_t i) { queue.pop(); });
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void mcs_lock(std::uint64_t num_push_pop)
-{
-    ds::Queue<int, locks::MCS_lock> queue;
-
-    hpx::for_loop(0ul, num_push_pop,
-        [&queue](std::uint64_t i) { queue.push(std::rand()); });
-
-    hpx::for_loop(
-        0ul, num_push_pop, [&queue](std::uint64_t i) { queue.pop(); });
-}
-
-////////////////////////////////////////////////////////////////////////////////
-class benchmark_invoker
-{
-public:
-    benchmark_invoker(std::uint64_t num_push_pop)
-      : num_push_pop_(num_push_pop)
-    {
-        std::cout << std::left << std::setw(30) << "Name: "
-                  << "Time (in s)" << '\n';
-    }
-
-    void invoke()
-    {
-        std::cout << std::left << std::setw(30) << "Name: "
-                  << "Time (in s)" << '\n';
-    }
-
-    template <typename Func, typename... Args>
-    void invoke(Func&& func, Args&&... args)
-    {
-        hpx::chrono::high_resolution_timer t;
-        for (std::size_t i = 0u; i != 3; ++i)
-        {
-            func.first(num_push_pop_);
-        }
-        double elapsed = t.elapsed() / 3;
-
-        std::cout << std::left << std::setw(30) << func.second << elapsed
-                  << '\n';
-
-        this->invoke(args...);
-    }
-
-private:
-    std::uint64_t num_push_pop_;
-};
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
     // extract command line argument, i.e. fib(N)
     std::uint64_t num_push_pop = vm["num-push-pop"].as<std::uint64_t>();
 
-    benchmark_invoker invoker{num_push_pop};
-    invoker.invoke(GET_FUNCTION_PAIR(hpx_spinlock),
-        GET_FUNCTION_PAIR(ttas_lock), GET_FUNCTION_PAIR(mcs_lock),
-        GET_FUNCTION_PAIR(tas_lock));
+    locks::util::benchmark_invoker invoker{num_push_pop};
+    invoker.invoke(
+        GET_FUNCTION_PAIR(concurrent_queue<hpx::lcos::local::spinlock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::TTAS_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::MCS_lock>));
 
     return hpx::finalize();    // Handles HPX shutdown
 }

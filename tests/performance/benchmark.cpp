@@ -1,6 +1,7 @@
 // Copyright (c) 2021 Nikunj Gupta
 
 #include <locks.hpp>
+#include <util/benchmark.hpp>
 
 #include <hpx/chrono.hpp>
 #include <hpx/hpx_init.hpp>
@@ -11,14 +12,6 @@
 #include <cstdint>
 #include <string>
 #include <tuple>
-
-auto return_bounded_function(
-    std::function<void(std::uint64_t, std::uint64_t)> func,
-    std::string const& name)
-{
-    return std::make_pair(func, name);
-}
-#define GET_FUNCTION_PAIR(f) return_bounded_function(f, #f)
 
 ////////////////////////////////////////////////////////////////////////////////
 template <typename LockType>
@@ -118,254 +111,57 @@ void no_locks(std::uint64_t num_tasks, std::uint64_t grain_size)
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
-void hpx_spinlock_small(std::uint64_t num_tasks, std::uint64_t grain_size)
+template <typename LockType>
+void critical_small(std::uint64_t num_tasks, std::uint64_t grain_size)
 {
     std::vector<hpx::future<void>> futures;
     futures.reserve(num_tasks);
 
-    critical_cases<hpx::lcos::local::spinlock> cases;
+    critical_cases<LockType> cases;
 
     {
         for (std::uint64_t i = 0ul; i != num_tasks; ++i)
             futures.emplace_back(hpx::async(
-                &critical_cases<hpx::lcos::local::spinlock>::critical_small,
-                &cases, grain_size));
+                &critical_cases<LockType>::critical_small, &cases, grain_size));
 
         hpx::wait_all(futures);
     }
 }
 
-void hpx_spinlock_med(std::uint64_t num_tasks, std::uint64_t grain_size)
+template <typename LockType>
+void critical_med(std::uint64_t num_tasks, std::uint64_t grain_size)
 {
     std::vector<hpx::future<void>> futures;
     futures.reserve(num_tasks);
 
-    critical_cases<hpx::lcos::local::spinlock> cases;
+    critical_cases<LockType> cases;
 
     {
         for (std::uint64_t i = 0ul; i != num_tasks; ++i)
             futures.emplace_back(hpx::async(
-                &critical_cases<hpx::lcos::local::spinlock>::critical_med,
-                &cases, grain_size));
+                &critical_cases<LockType>::critical_med, &cases, grain_size));
 
         hpx::wait_all(futures);
     }
 }
 
-void hpx_spinlock_big(std::uint64_t num_tasks, std::uint64_t grain_size)
+template <typename LockType>
+void critical_big(std::uint64_t num_tasks, std::uint64_t grain_size)
 {
     std::vector<hpx::future<void>> futures;
     futures.reserve(num_tasks);
 
-    critical_cases<hpx::lcos::local::spinlock> cases;
+    critical_cases<LockType> cases;
 
     {
         for (std::uint64_t i = 0ul; i != num_tasks; ++i)
             futures.emplace_back(hpx::async(
-                &critical_cases<hpx::lcos::local::spinlock>::critical_big,
-                &cases, grain_size));
+                &critical_cases<LockType>::critical_big, &cases, grain_size));
 
         hpx::wait_all(futures);
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-void tas_critical_small(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TAS_lock>::critical_small,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void tas_critical_med(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TAS_lock>::critical_med,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void tas_critical_big(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TAS_lock>::critical_big,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-void ttas_critical_small(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TTAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TTAS_lock>::critical_small,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void ttas_critical_med(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TTAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TTAS_lock>::critical_med,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void ttas_critical_big(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::TTAS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::TTAS_lock>::critical_big,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-void mcs_critical_small(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::MCS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::MCS_lock>::critical_small,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void mcs_critical_med(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::MCS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::MCS_lock>::critical_med,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-
-void mcs_critical_big(std::uint64_t num_tasks, std::uint64_t grain_size)
-{
-    std::vector<hpx::future<void>> futures;
-    futures.reserve(num_tasks);
-
-    critical_cases<locks::MCS_lock> cases;
-
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(
-                hpx::async(&critical_cases<locks::MCS_lock>::critical_big,
-                    &cases, grain_size));
-
-        hpx::wait_all(futures);
-    }
-}
-////////////////////////////////////////////////////////////////////////////////
-
-class benchmark_invoker
-{
-public:
-    benchmark_invoker(std::uint64_t num_tasks, std::uint64_t grain_size)
-      : num_tasks_(num_tasks)
-      , grain_size_(grain_size)
-    {
-        std::cout << std::left << std::setw(30) << "Name: "
-                  << "Time (in s)" << '\n';
-    }
-
-    void invoke()
-    {
-        std::cout << std::left << std::setw(30) << "Name: "
-                  << "Time (in s)" << '\n';
-    }
-
-    template <typename Func, typename... Args>
-    void invoke(Func&& func, Args&&... args)
-    {
-        hpx::chrono::high_resolution_timer t;
-        for (std::size_t i = 0u; i != 3; ++i)
-        {
-            func.first(num_tasks_, grain_size_);
-        }
-        double elapsed = t.elapsed() / 3;
-
-        std::cout << std::left << std::setw(30) << func.second << elapsed
-                  << '\n';
-
-        this->invoke(args...);
-    }
-
-private:
-    std::uint64_t num_tasks_;
-    std::uint64_t grain_size_;
-};
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
@@ -373,20 +169,20 @@ int hpx_main(hpx::program_options::variables_map& vm)
     std::uint64_t num_tasks = vm["num-tasks"].as<std::uint64_t>();
     std::uint64_t grain_size = vm["grain-size"].as<std::uint64_t>();
 
-    benchmark_invoker invoker{num_tasks, grain_size};
+    locks::util::benchmark_invoker invoker{num_tasks, grain_size};
     invoker.invoke(GET_FUNCTION_PAIR(no_locks),
-        GET_FUNCTION_PAIR(hpx_spinlock_small),
-        GET_FUNCTION_PAIR(hpx_spinlock_med),
-        GET_FUNCTION_PAIR(hpx_spinlock_big),
-        GET_FUNCTION_PAIR(tas_critical_small),
-        GET_FUNCTION_PAIR(tas_critical_med),
-        GET_FUNCTION_PAIR(tas_critical_big),
-        GET_FUNCTION_PAIR(ttas_critical_small),
-        GET_FUNCTION_PAIR(ttas_critical_med),
-        GET_FUNCTION_PAIR(ttas_critical_big),
-        GET_FUNCTION_PAIR(mcs_critical_small),
-        GET_FUNCTION_PAIR(mcs_critical_med),
-        GET_FUNCTION_PAIR(mcs_critical_big));
+        GET_FUNCTION_PAIR(critical_small<hpx::lcos::local::spinlock>),
+        GET_FUNCTION_PAIR(critical_med<hpx::lcos::local::spinlock>),
+        GET_FUNCTION_PAIR(critical_big<hpx::lcos::local::spinlock>),
+        GET_FUNCTION_PAIR(critical_small<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::TTAS_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::TTAS_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::TTAS_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::MCS_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::MCS_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::MCS_lock>));
 
     return hpx::finalize();    // Handles HPX shutdown
 }
