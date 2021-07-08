@@ -38,10 +38,8 @@ struct critical_cases
         {
         }
 
-        {
-            std::lock_guard<LockType> guard(lock);
-            ++counter;
-        }
+        std::lock_guard<LockType> guard(lock);
+        ++counter;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -51,19 +49,17 @@ struct critical_cases
     void critical_med(std::uint64_t grain_size)
     {
         // Do artificial work for grain_size/2
-        hpx::chrono::high_resolution_timer t;
-        while (t.elapsed() * 1e6 < (grain_size / 2))
+        hpx::chrono::high_resolution_timer t1;
+        while (t1.elapsed() * 1e6 < (grain_size / 2))
         {
         }
 
+        std::lock_guard<LockType> guard(lock);
+        ++counter;
+        // Do artificial work for 50us
+        hpx::chrono::high_resolution_timer t2;
+        while (t2.elapsed() * 1e6 < (grain_size / 2))
         {
-            std::lock_guard<LockType> guard(lock);
-            ++counter;
-            // Do artificial work for 50us
-            hpx::chrono::high_resolution_timer t;
-            while (t.elapsed() * 1e6 < (grain_size / 2))
-            {
-            }
         }
     }
 
@@ -73,15 +69,13 @@ struct critical_cases
     //  the code is under locks.
     void critical_big(std::uint64_t grain_size)
     {
-        {
-            std::lock_guard<LockType> guard(lock);
-            ++counter;
+        std::lock_guard<LockType> guard(lock);
+        ++counter;
 
-            // Do artificial work for grain_size
-            hpx::chrono::high_resolution_timer t;
-            while (t.elapsed() * 1e6 < grain_size)
-            {
-            }
+        // Do artificial work for grain_size
+        hpx::chrono::high_resolution_timer t;
+        while (t.elapsed() * 1e6 < grain_size)
+        {
         }
     }
 
@@ -99,14 +93,12 @@ void no_locks(std::uint64_t num_tasks, std::uint64_t grain_size)
 
     critical_cases<hpx::lcos::local::spinlock> cases;
 
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(hpx::async(
-                &critical_cases<hpx::lcos::local::spinlock>::base_case, &cases,
-                grain_size));
+    for (std::uint64_t i = 0ul; i != num_tasks; ++i)
+        futures.emplace_back(
+            hpx::async(&critical_cases<hpx::lcos::local::spinlock>::base_case,
+                &cases, grain_size));
 
-        hpx::wait_all(futures);
-    }
+    hpx::wait_all(futures);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -119,13 +111,11 @@ void critical_small(std::uint64_t num_tasks, std::uint64_t grain_size)
 
     critical_cases<LockType> cases;
 
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(hpx::async(
-                &critical_cases<LockType>::critical_small, &cases, grain_size));
+    for (std::uint64_t i = 0ul; i != num_tasks; ++i)
+        futures.emplace_back(hpx::async(
+            &critical_cases<LockType>::critical_small, &cases, grain_size));
 
-        hpx::wait_all(futures);
-    }
+    hpx::wait_all(futures);
 }
 
 template <typename LockType>
@@ -136,13 +126,11 @@ void critical_med(std::uint64_t num_tasks, std::uint64_t grain_size)
 
     critical_cases<LockType> cases;
 
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(hpx::async(
-                &critical_cases<LockType>::critical_med, &cases, grain_size));
+    for (std::uint64_t i = 0ul; i != num_tasks; ++i)
+        futures.emplace_back(hpx::async(
+            &critical_cases<LockType>::critical_med, &cases, grain_size));
 
-        hpx::wait_all(futures);
-    }
+    hpx::wait_all(futures);
 }
 
 template <typename LockType>
@@ -153,19 +141,16 @@ void critical_big(std::uint64_t num_tasks, std::uint64_t grain_size)
 
     critical_cases<LockType> cases;
 
-    {
-        for (std::uint64_t i = 0ul; i != num_tasks; ++i)
-            futures.emplace_back(hpx::async(
-                &critical_cases<LockType>::critical_big, &cases, grain_size));
+    for (std::uint64_t i = 0ul; i != num_tasks; ++i)
+        futures.emplace_back(hpx::async(
+            &critical_cases<LockType>::critical_big, &cases, grain_size));
 
-        hpx::wait_all(futures);
-    }
+    hpx::wait_all(futures);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
-    // extract command line argument, i.e. fib(N)
     std::uint64_t num_tasks = vm["num-tasks"].as<std::uint64_t>();
     std::uint64_t grain_size = vm["grain-size"].as<std::uint64_t>();
 

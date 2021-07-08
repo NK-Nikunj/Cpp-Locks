@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <hpx/config.hpp>
+
 #include <atomic>
 
 namespace locks {
@@ -10,8 +12,7 @@ namespace locks {
     {
     public:
         TTAS_lock() = default;
-        TTAS_lock(TTAS_lock const&) = delete;
-        TTAS_lock(TTAS_lock&&) = delete;
+        HPX_NON_COPYABLE(TTAS_lock);
 
         void lock();
         void unlock();
@@ -23,8 +24,7 @@ namespace locks {
 
     inline void TTAS_lock::lock()
     {
-        while (!is_locked_.load() &&
-            is_locked_.exchange(true, std::memory_order_acquire))
+        while (!is_locked_.load() && is_locked_.exchange(true))
         {
             asm volatile("pause\n" : : : "memory");
         }

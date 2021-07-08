@@ -28,8 +28,8 @@ namespace ds {
         }
 
     private:
-        std::queue<ValueType> queue_;
-        LockType lock_;
+        std::queue<ValueType> queue_{};
+        LockType lock_{};
     };
 
 }    // namespace ds
@@ -49,7 +49,6 @@ void concurrent_queue(std::uint64_t num_push_pop)
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
-    // extract command line argument, i.e. fib(N)
     std::uint64_t num_push_pop = vm["num-push-pop"].as<std::uint64_t>();
 
     locks::util::benchmark_invoker invoker{num_push_pop};

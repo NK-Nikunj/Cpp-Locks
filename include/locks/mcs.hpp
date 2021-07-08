@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <hpx/config.hpp>
+
 #include <atomic>
 #include <cstdint>
 
@@ -18,8 +20,7 @@ namespace locks {
 
     public:
         MCS_lock() = default;
-        MCS_lock(MCS_lock const&) = delete;
-        MCS_lock(MCS_lock&&) = delete;
+        HPX_NON_COPYABLE(MCS_lock);
 
         void lock();
         void unlock();
@@ -31,8 +32,7 @@ namespace locks {
 
     void MCS_lock::lock()
     {
-        const auto prev_node =
-            tail.exchange(&local_node, std::memory_order_acquire);
+        const auto prev_node = tail.exchange(&local_node);
 
         if (prev_node != nullptr)
         {
@@ -52,8 +52,7 @@ namespace locks {
         if (local_node.next == nullptr)
         {
             mcs_node* p = &local_node;
-            if (tail.compare_exchange_strong(p, nullptr,
-                    std::memory_order_release, std::memory_order_relaxed))
+            if (tail.compare_exchange_strong(p, nullptr))
                 return;
 
             while (local_node.next == nullptr)
