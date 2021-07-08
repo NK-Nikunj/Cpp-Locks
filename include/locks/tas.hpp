@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include <atomic>
+#include <immintrin.h>
 
+#include <atomic>
+#include <iostream>
 namespace locks {
 
     class TAS_lock
@@ -25,6 +27,7 @@ namespace locks {
     {
         while (is_locked_.exchange(true, std::memory_order_acquire))
         {
+            asm volatile("pause\n" : : : "memory");
         }
     }
 

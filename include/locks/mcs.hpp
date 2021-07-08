@@ -42,6 +42,7 @@ namespace locks {
 
             while (local_node.locked)
             {
+                asm volatile("pause\n" : : : "memory");
             }
         }
     }

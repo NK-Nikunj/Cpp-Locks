@@ -23,9 +23,10 @@ namespace locks {
 
     inline void TTAS_lock::lock()
     {
-        while (!is_locked_.load(std::memory_order_relaxed) &&
+        while (!is_locked_.load() &&
             is_locked_.exchange(true, std::memory_order_acquire))
         {
+            asm volatile("pause\n" : : : "memory");
         }
     }
 

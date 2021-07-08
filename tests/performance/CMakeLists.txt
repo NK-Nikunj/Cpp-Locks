@@ -2,6 +2,7 @@ add_custom_target(performance)
 
 set(_tests
     benchmark
+    lock_queue
 )
 
 foreach(_test ${_tests})
