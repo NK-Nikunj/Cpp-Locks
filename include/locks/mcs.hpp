@@ -32,7 +32,8 @@ namespace locks {
 
     void MCS_lock::lock()
     {
-        const auto prev_node = tail.exchange(&local_node);
+        const auto prev_node =
+            tail.exchange(&local_node, std::memory_order_acquire);
 
         if (prev_node != nullptr)
         {
@@ -52,7 +53,8 @@ namespace locks {
         if (local_node.next == nullptr)
         {
             mcs_node* p = &local_node;
-            if (tail.compare_exchange_strong(p, nullptr))
+            if (tail.compare_exchange_strong(p, nullptr,
+                    std::memory_order_release, std::memory_order_relaxed))
                 return;
 
             while (local_node.next == nullptr)

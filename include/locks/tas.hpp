@@ -27,7 +27,7 @@ namespace locks {
 
     inline void TAS_lock::lock()
     {
-        while (is_locked_.exchange(true))
+        while (is_locked_.exchange(true, std::memory_order_acquire))
         {
             asm volatile("pause\n" : : : "memory");
         }
@@ -35,12 +35,12 @@ namespace locks {
 
     inline void TAS_lock::unlock()
     {
-        is_locked_.store(false);
+        is_locked_.store(false, std::memory_order_release);
     }
 
     inline bool TAS_lock::is_locked()
     {
-        return is_locked_.load();
+        return is_locked_.load(std::memory_order_acquire);
     }
 
 }    // namespace locks
