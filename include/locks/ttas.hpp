@@ -30,7 +30,7 @@ namespace locks {
                 !is_locked_.exchange(true, std::memory_order_acquire))
                 return;
 
-            asm volatile("pause\n" : : : "memory");
+            HPX_SMT_PAUSE;
         }
     }
 

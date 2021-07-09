@@ -29,7 +29,7 @@ namespace locks {
     {
         while (is_locked_.exchange(true, std::memory_order_acquire))
         {
-            asm volatile("pause\n" : : : "memory");
+            HPX_SMT_PAUSE;
         }
     }
 

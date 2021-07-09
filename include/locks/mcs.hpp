@@ -16,13 +16,18 @@ namespace locks {
     private:
         struct mcs_node
         {
-            bool locked{false};
+            std::uint32_t locked{false};
             mcs_node* next{nullptr};
         };
 
     public:
         MCS_lock() = default;
         HPX_NON_COPYABLE(MCS_lock);
+
+        ~MCS_lock()
+        {
+            delete tail;
+        }
 
         void lock();
         void unlock();
@@ -33,30 +38,30 @@ namespace locks {
 
     void MCS_lock::lock()
     {
-        mcs_node* const local_node = new mcs_node();
+        std::unique_ptr<mcs_node> local_node = std::make_unique<mcs_node>();
 
         hpx::threads::thread_id_type id = hpx::threads::get_self_id();
         hpx::threads::set_thread_data(
-            id, reinterpret_cast<std::size_t>(local_node));
+            id, reinterpret_cast<std::size_t>(local_node.get()));
 
         mcs_node* const prev_node =
-            tail.exchange(local_node, std::memory_order_acquire);
+            tail.exchange(local_node.get(), std::memory_order_acquire);
 
         if (prev_node != nullptr)
         {
             local_node->locked = true;
 
-            prev_node->next = local_node;
+            prev_node->next = local_node.get();
 
             while (local_node->locked)
             {
+                HPX_SMT_PAUSE;
             }
         }
     }
 
     void MCS_lock::unlock()
     {
-        // Node 1 gets access to its local node
         hpx::threads::thread_id_type id = hpx::threads::get_self_id();
         mcs_node* const prev_node =
             reinterpret_cast<mcs_node*>(hpx::threads::get_thread_data(id));
@@ -70,6 +75,7 @@ namespace locks {
 
             while (prev_node->next == nullptr)
             {
+                HPX_SMT_PAUSE;
             }
         }
 
