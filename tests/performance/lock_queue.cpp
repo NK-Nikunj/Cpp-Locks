@@ -17,7 +17,6 @@ namespace ds {
         void pop()
         {
             std::lock_guard<LockType> mlock(lock_);
-            auto item = queue_.front();
             queue_.pop();
         }
 
