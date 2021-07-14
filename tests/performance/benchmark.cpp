@@ -162,15 +162,27 @@ int hpx_main(hpx::program_options::variables_map& vm)
         GET_FUNCTION_PAIR(critical_small<locks::TAS_lock>),
         GET_FUNCTION_PAIR(critical_med<locks::TAS_lock>),
         GET_FUNCTION_PAIR(critical_big<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::TAS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::TAS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::TAS_BO_lock>),
         GET_FUNCTION_PAIR(critical_small<locks::TTAS_lock>),
         GET_FUNCTION_PAIR(critical_med<locks::TTAS_lock>),
         GET_FUNCTION_PAIR(critical_big<locks::TTAS_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::TTAS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::TTAS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::TTAS_BO_lock>),
         GET_FUNCTION_PAIR(critical_small<locks::MCS_lock>),
         GET_FUNCTION_PAIR(critical_med<locks::MCS_lock>),
         GET_FUNCTION_PAIR(critical_big<locks::MCS_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::MCS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::MCS_BO_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::MCS_BO_lock>),
         GET_FUNCTION_PAIR(critical_small<locks::CLH_lock>),
         GET_FUNCTION_PAIR(critical_med<locks::CLH_lock>),
-        GET_FUNCTION_PAIR(critical_big<locks::CLH_lock>)
+        GET_FUNCTION_PAIR(critical_big<locks::CLH_lock>),
+        GET_FUNCTION_PAIR(critical_small<locks::CLH_BO_lock>),
+        GET_FUNCTION_PAIR(critical_med<locks::CLH_BO_lock>),
+        GET_FUNCTION_PAIR(critical_big<locks::CLH_BO_lock>)
         //
     );
 

@@ -54,8 +54,15 @@ int hpx_main(hpx::program_options::variables_map& vm)
     invoker.invoke(
         GET_FUNCTION_PAIR(concurrent_queue<hpx::lcos::local::spinlock>),
         GET_FUNCTION_PAIR(concurrent_queue<locks::TAS_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::TAS_BO_lock>),
         GET_FUNCTION_PAIR(concurrent_queue<locks::TTAS_lock>),
-        GET_FUNCTION_PAIR(concurrent_queue<locks::MCS_lock>));
+        GET_FUNCTION_PAIR(concurrent_queue<locks::TTAS_BO_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::MCS_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::MCS_BO_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::CLH_lock>),
+        GET_FUNCTION_PAIR(concurrent_queue<locks::CLH_BO_lock>)
+    // 
+    );
 
     return hpx::finalize();    // Handles HPX shutdown
 }

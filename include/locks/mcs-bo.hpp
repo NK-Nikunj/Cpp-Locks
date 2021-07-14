@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <util/backoff.hpp>
+
 #include <hpx/config.hpp>
 #include <hpx/modules/lcos_local.hpp>
 #include <hpx/modules/threading.hpp>
@@ -11,7 +13,7 @@
 
 namespace locks {
 
-    class MCS_lock
+    class MCS_BO_lock
     {
     private:
         struct mcs_node
@@ -21,10 +23,10 @@ namespace locks {
         };
 
     public:
-        MCS_lock() = default;
-        HPX_NON_COPYABLE(MCS_lock);
+        MCS_BO_lock() = default;
+        HPX_NON_COPYABLE(MCS_BO_lock);
 
-        ~MCS_lock() = default;
+        ~MCS_BO_lock() = default;
 
         void lock();
         void unlock();
@@ -33,7 +35,7 @@ namespace locks {
         std::atomic<mcs_node*> tail{nullptr};
     };
 
-    inline void MCS_lock::lock()
+    inline void MCS_BO_lock::lock()
     {
         mcs_node* local_node = new mcs_node{};
         hpx::threads::thread_id_type id = hpx::threads::get_self_id();
@@ -49,14 +51,16 @@ namespace locks {
 
             prev_node->next = local_node;
 
+            std::size_t k = 0x1;
             while (local_node->locked)
             {
-                HPX_SMT_PAUSE;
+                k <<= 1;
+                locks::util::exp_backoff(k);
             }
         }
     }
 
-    inline void MCS_lock::unlock()
+    inline void MCS_BO_lock::unlock()
     {
         hpx::threads::thread_id_type id = hpx::threads::get_self_id();
         mcs_node* const curr_node =
@@ -69,9 +73,11 @@ namespace locks {
                     std::memory_order_release, std::memory_order_relaxed))
                 return;
 
+            std::size_t k = 0x1;
             while (curr_node->next == nullptr)
             {
-                HPX_SMT_PAUSE;
+                k <<= 1;
+                locks::util::exp_backoff(k);
             }
         }
 
