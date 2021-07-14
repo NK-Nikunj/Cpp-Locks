@@ -1,6 +1,7 @@
 add_custom_target(performance)
 
 set(_tests
+    artificial_parallel_for
     benchmark
     lock_queue
 )
