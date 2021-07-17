@@ -24,17 +24,19 @@ namespace locks {
         bool is_locked();
 
     private:
+        bool acquire_lock();
         std::atomic<bool> is_locked_;
     };
 
+    inline bool TAS_BO_lock::acquire_lock()
+    {
+        return !is_locked_.exchange(true, std::memory_order_acquire);
+    }
+
     inline void TAS_BO_lock::lock()
     {
-        std::size_t k = 0x1;
-        while (is_locked_.exchange(true, std::memory_order_acquire))
-        {
-            k <<= 1;
-            locks::util::exp_backoff(k);
-        }
+        hpx::util::yield_while(
+            [this] { return !acquire_lock(); }, "locks::TAS_BO_lock::lock");
     }
 
     inline void TAS_BO_lock::unlock()

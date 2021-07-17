@@ -26,16 +26,11 @@ namespace locks {
 
     inline void TTAS_BO_lock::lock()
     {
-        std::size_t k = 0x1;
-        while (true)
+        do
         {
-            if (!is_locked_.load(std::memory_order_acquire) &&
-                !is_locked_.exchange(true, std::memory_order_acquire))
-                return;
-
-            k <<= 1;
-            locks::util::exp_backoff(k);
-        }
+            hpx::util::yield_while(
+                [this] { return is_locked(); }, "locks::TTAS_BO_lock::lock");
+        } while (is_locked_.exchange(true, std::memory_order_acquire));
     }
 
     inline void TTAS_BO_lock::unlock()
@@ -45,7 +40,7 @@ namespace locks {
 
     inline bool TTAS_BO_lock::is_locked()
     {
-        return is_locked_.load(std::memory_order_acquire);
+        return is_locked_.load(std::memory_order_relaxed);
     }
 
 }    // namespace locks

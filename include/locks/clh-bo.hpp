@@ -54,12 +54,8 @@ namespace locks {
         clh_node* const prev_node =
             tail.exchange(local_node, std::memory_order_acquire);
 
-        std::size_t k = 0x1;
-        while (prev_node->locked)
-        {
-            k <<= 1;
-            locks::util::exp_backoff(k);
-        }
+        hpx::util::yield_while([prev_node] { return prev_node->locked; },
+            "locks::CLH_BO_lock::lock");
 
         delete prev_node;
     }

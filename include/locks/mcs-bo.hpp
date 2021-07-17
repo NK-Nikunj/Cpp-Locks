@@ -51,12 +51,8 @@ namespace locks {
 
             prev_node->next = local_node;
 
-            std::size_t k = 0x1;
-            while (local_node->locked)
-            {
-                k <<= 1;
-                locks::util::exp_backoff(k);
-            }
+            hpx::util::yield_while([local_node] { return local_node->locked; },
+                "locks::MCS_BO_lock::lock");
         }
     }
 
@@ -73,12 +69,8 @@ namespace locks {
                     std::memory_order_release, std::memory_order_relaxed))
                 return;
 
-            std::size_t k = 0x1;
             while (curr_node->next == nullptr)
-            {
-                k <<= 1;
-                locks::util::exp_backoff(k);
-            }
+                HPX_SMT_PAUSE;
         }
 
         curr_node->next->locked = false;
